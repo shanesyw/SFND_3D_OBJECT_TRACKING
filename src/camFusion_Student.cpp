@@ -12,6 +12,10 @@
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics.hpp>
 
+#include <opencv2/core.hpp>
+#include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+
 using namespace std;
 
 
@@ -64,7 +68,7 @@ void clusterLidarWithROI(std::vector<BoundingBox> &boundingBoxes, std::vector<Li
     } // eof loop over all Lidar points
 }
 
-void showLidarTopview(std::vector<LidarPoint> &lidarPoints, cv::Size worldSize, cv::Size imageSize)
+void showLidarTopview(std::vector<LidarPoint> &lidarPoints, cv::Size worldSize, cv::Size imageSize, int imageIndex)
 {
     // create topview image
     cv::Mat topviewImg(imageSize, CV_8UC3, cv::Scalar(0, 0, 0));
@@ -102,10 +106,17 @@ void showLidarTopview(std::vector<LidarPoint> &lidarPoints, cv::Size worldSize, 
     string windowName = "Top-View Perspective of LiDAR data";
     cv::namedWindow(windowName, 2);
     cv::imshow(windowName, topviewImg);
-    cv::waitKey(0); // wait for key to be pressed
+
+    string imageString = "./TopImage/TopViewImage_";
+    if(imageIndex < 10)
+        imageString += "0";
+    imageString += to_string(imageIndex);
+    imageString += ".jpg";
+    cv::imwrite(imageString,topviewImg );
+    //cv::waitKey(0); // wait for key to be pressed
 }
 
-void show3DObjects(std::vector<BoundingBox> &boundingBoxes, cv::Size worldSize, cv::Size imageSize, bool bWait)
+void show3DObjects(std::vector<BoundingBox> &boundingBoxes, cv::Size worldSize, cv::Size imageSize, bool bWait, int imageIndex)
 {
     // create topview image
     cv::Mat topviewImg(imageSize, CV_8UC3, cv::Scalar(255, 255, 255));
@@ -175,6 +186,10 @@ void show3DObjects(std::vector<BoundingBox> &boundingBoxes, cv::Size worldSize, 
     string windowName = "3D Objects";
     cv::namedWindow(windowName, 1);
     cv::imshow(windowName, topviewImg);
+    string imageString = "./3DImage/3DViewImage_";
+    imageString += to_string(imageIndex);
+    imageString += ".jpg";
+    cv::imwrite(imageString,topviewImg );
      //std::cout << "checkpoint 3" << endl;
     if(bWait)
     {
@@ -372,8 +387,8 @@ void computeTTCLidar(std::vector<LidarPoint> &lidarPointsPrev,
 
 
     TTC = 1/frameRate * minCurrX /(minPrevX - minCurrX);
-    cout << "Min PrevX: " << minPrevX << " CurrX: " << minCurrX <<
-        "DeltaX: " << (minPrevX-minCurrX) << " TTC: " << TTC << endl;
+    //cout << "Min PrevX: " << minPrevX << " CurrX: " << minCurrX <<
+    //    "DeltaX: " << (minPrevX-minCurrX) << " TTC: " << TTC << endl;
 
 
 }

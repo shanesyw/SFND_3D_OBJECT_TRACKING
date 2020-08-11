@@ -27,8 +27,7 @@
 
 using namespace std;
 
-/* MAIN PROGRAM */
-int main(int argc, const char *argv[])
+void BenchmarkLoop(string detectorType, string descriptorType)
 {
     /* INIT VARIABLES AND DATA STRUCTURES */
 
@@ -220,13 +219,13 @@ int main(int argc, const char *argv[])
         clusterLidarWithROI((dataBuffer.end()-1)->boundingBoxes, (dataBuffer.end() - 1)->lidarPoints, shrinkFactor, P_rect_00, R_rect_00, RT);
 
         // Visualize 3D objects
-        bVis = false;
+        bVis = true;
         if(bVis)
         {
-            show3DObjects((dataBuffer.end()-1)->boundingBoxes, cv::Size(4.0, 20.0), cv::Size(2000, 2000), true);
+            //show3DObjects((dataBuffer.end()-1)->boundingBoxes, cv::Size(4.0, 20.0), cv::Size(2000, 2000), false,imgIndex);
             
             // for testing purpose
-            //showLidarTopview((dataBuffer.end() - 1)->lidarPoints, cv::Size(10.0, 25.0), cv::Size(1000, 2000));
+            //showLidarTopview((dataBuffer.end() - 1)->lidarPoints, cv::Size(10.0, 25.0), cv::Size(1000, 2000),true, imgIndex);
         }
         bVis = false;
 
@@ -244,7 +243,7 @@ int main(int argc, const char *argv[])
 
         // extract 2D keypoints from current image
         vector<cv::KeyPoint> keypoints; // create empty feature list for current image
-        string detectorType = "ORB";
+        //string detectorType = "ORB";
 
         if(detectorType.compare("SHITOMASI") == 0)
         {
@@ -306,7 +305,7 @@ int main(int argc, const char *argv[])
         /* EXTRACT KEYPOINT DESCRIPTORS */
 
         cv::Mat descriptors;
-        string descriptorType = "BRIEF"; // BRISK, BRIEF, ORB, FREAK, AKAZE, SIFT
+        //string descriptorType = "BRIEF"; // BRISK, BRIEF, ORB, FREAK, AKAZE, SIFT
         descKeypoints((dataBuffer.end() - 1)->keypoints, (dataBuffer.end() - 1)->cameraImg, descriptors, descriptorType);
 
         // push descriptors for current frame to end of data buffer
@@ -321,7 +320,7 @@ int main(int argc, const char *argv[])
             /* MATCH KEYPOINT DESCRIPTORS */
 
             vector<cv::DMatch> matches;
-            string matcherType = "MAT_BF";        // MAT_BF, MAT_FLANN
+            string matcherType = "MAT_FLANN";        // MAT_BF, MAT_FLANN
             string descriptorType = "DES_BINARY"; // DES_BINARY, DES_HOG
             string selectorType = "SEL_KNN";       // SEL_NN, SEL_KNN
 
@@ -440,7 +439,10 @@ int main(int argc, const char *argv[])
                         sensorFrameRate, ttcCamera);
                     //// EOF STUDENT ASSIGNMENT
 
-                    bVis = true;
+                    cout << "|" << imgIndex << "|" << ttcLidar << 
+                    "|" << ttcCamera << "||" << endl;
+
+                    bVis = false;
                     if (bVis)
                     {
                         cv::Mat visImg = (dataBuffer.end() - 1)->cameraImg.clone();
@@ -454,6 +456,12 @@ int main(int argc, const char *argv[])
                         string windowName = "Final Results : TTC";
                         cv::namedWindow(windowName, 4);
                         cv::imshow(windowName, visImg);
+
+                        string imageString = "./TTCImage/TTCImage_";
+                        imageString += to_string(imgIndex);
+                        imageString += ".jpg";
+                        cv::imwrite(imageString,visImg );
+
                         cout << "Press key to continue to next frame" << endl;
                         cv::waitKey(0);
                     }
@@ -465,6 +473,68 @@ int main(int argc, const char *argv[])
         }
 
     } // eof loop over all images
+
+    return;
+}
+
+
+/* MAIN PROGRAM */
+int main(int argc, const char *argv[])
+{
+    // note: the string input arguments can be changed to test various 
+    // configurations of the 2D feature matching pipeline.
+    //std::cout << "\n## Combination: [" << detector << "] and [" <<
+    //    descriptor << "]" << endl;
+    //cout << "|Image # |Lidar TTC| Camera TTC | Remarks |" << endl;
+    //cout << "|--- |---:|---:|---|" << endl;
+    //BenchmarkLoop("FAST", "ORB");
+
+    //this is for MP. 8 & 9
+
+    if(true)
+    {
+
+        vector<string> detectors;
+        detectors.push_back("SHITOMASI");
+        detectors.push_back("HARRISCORNER");
+        detectors.push_back("FAST");
+        detectors.push_back("BRISK");
+        detectors.push_back("ORB");
+        detectors.push_back("AKAZE");
+        detectors.push_back("SIFT");
+
+        vector<string> descriptors;
+        descriptors.push_back("BRISK");
+        descriptors.push_back("BRIEF");
+        descriptors.push_back("ORB");
+        descriptors.push_back("FREAK");
+        descriptors.push_back("AKAZE");
+        descriptors.push_back("SIFT");
+
+        for(string detector : detectors)
+        {
+            for(string descriptor : descriptors)
+            {
+
+                try
+                {
+                    std::cout << "\n## Combination: [" << detector << "] and [" <<
+                        descriptor << "]" << endl;
+                    cout << "|Image # |Lidar TTC| Camera TTC | Remarks |" << endl;
+                    cout << "|--- |---:|---:|---|" << endl;
+                    BenchmarkLoop(detector, descriptor);
+                }
+                catch(const std::exception& e)
+                {
+                    //std::cerr << e.what() << '\n';
+                    std::cout << "\nThe combination: [" << detector << "] and [" <<
+                        descriptor << "] cannot yield." << endl;
+                }
+
+
+            }
+        }
+    }
 
     return 0;
 }
